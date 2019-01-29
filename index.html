@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Monitor</title>
+
+  <link rel="stylesheet" href="/localcdn/bootstrap/dist/css/bootstrap.min.css">
+
+  <script src="/localcdn/jquery/dist/jquery.min.js"></script>
+  <script src="/localcdn/bootstrap/dist/js/bootstrap.min.js"></script>
+
+  <script type="text/javascript" src="/localcdn/smoothie.js"></script>
+</head>
+
+<body>
+
+  <div class='container-fluid'>
+    <div class='row'>
+      <div class='col-4'>
+        <form>
+          <div class="form-group">
+            <label for="exampleFormControlInput1">Computer #1:</label>
+            <input class="form-control" id="exampleFormControlInput1" placeholder="http://127.0.0.1">
+          </div>
+        </form>
+        <canvas id="mycanvasMem" height="150" width="400"></canvas>
+        <canvas id="mycanvasCpu" height="150" width="400"></canvas>
+      </div>
+      <div class='col-4'>Sunucu 2</div>
+      <div class='col-4'>Sunucu 3</div>
+    </div>
+  </div>
+
+  <script>
+
+
+    var smoothieCpu = new SmoothieChart({ millisPerPixel: 50, maxValue: 100, minValue: 0 });
+    smoothieCpu.streamTo(document.getElementById("mycanvasCpu"));
+    var smoothieMem = new SmoothieChart({ millisPerPixel: 50, maxValue: 100, minValue: 0 });
+    smoothieMem.streamTo(document.getElementById("mycanvasMem"));
+
+    var cpuLine = new TimeSeries();
+    var memLine = new TimeSeries();
+    smoothieCpu.addTimeSeries(cpuLine, { strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3 });
+    smoothieMem.addTimeSeries(memLine, { strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3 });
+
+    var cpu = new WebSocket('ws://127.0.0.1/system/socket/v1')
+    cpu.onmessage = function (event) {
+      console.log(JSON.parse(event.data))
+      var stats = JSON.parse(event.data)
+      cpuLine.append(new Date().getTime(), stats.cpu)
+      memLine.append(new Date().getTime(), stats.mem)
+      // console.log(JSON.parse(event.data))
+    }
+
+  </script>
+
+</body>
+
+</html>
