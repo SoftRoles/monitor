@@ -85,10 +85,10 @@
       resizeCanvas()
       $.get('/system/api/v1/cpu', function (data) {
         var cpuInfo = JSON.parse(data)
-        $('.cpu-model').text(cpuInfo && cpuInfo.model)
-        cpuInfo.cores.forEach(function (core, index) {
-          $('.cpu-freq').text((index + 1) + ': ' + core + ' MHz')
-        })
+        $('.cpu-model').text(cpuInfo && cpuInfo.brand)
+        // cpuInfo.cores.forEach(function (core, index) {
+        //   $('.cpu-freq').text((index + 1) + ': ' + core + ' MHz')
+        // })
         console.log(JSON.parse(data))
       })
     })
