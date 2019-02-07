@@ -19,18 +19,35 @@
 
   <div class='container-fluid'>
     <div class='row'>
-      <div class='col-4'>
+      <div class='col-6'>
         <form>
           <div class="form-group">
             <label for="exampleFormControlInput1">Computer #1:</label>
             <input class="form-control" id="exampleFormControlInput1" placeholder="http://127.0.0.1">
           </div>
         </form>
-        <canvas id="mycanvasMem" height="150" width="400"></canvas>
-        <canvas id="mycanvasCpu" height="150" width="400"></canvas>
+        <div class='row'>
+          <div class='col-3'>
+            <h5>Memory:</h5>
+            <div></div>
+          </div>
+          <div class='col-9 time-series'>
+            <canvas id="mycanvasMem" height="150" width="400"></canvas>
+          </div>
+        </div>
+        <div class='row'>
+          <div class='col-3'>
+            <h5>CPU:</h5>
+            <div class='cpu-model'></div>
+            <div class='cpu-freq'></div>
+          </div>
+          <div class='col-9 time-series'>
+            <canvas id="mycanvasCpu" height="150" width="400"></canvas>
+          </div>
+        </div>
       </div>
-      <div class='col-4'>Sunucu 2</div>
-      <div class='col-4'>Sunucu 3</div>
+      <div class='col-6'>Sunucu 2</div>
+      <div class='col-6'>Sunucu 3</div>
     </div>
   </div>
 
@@ -49,12 +66,32 @@
 
     var cpu = new WebSocket('ws://127.0.0.1/system/socket/v1')
     cpu.onmessage = function (event) {
-      console.log(JSON.parse(event.data))
+      // console.log(JSON.parse(event.data))
       var stats = JSON.parse(event.data)
       cpuLine.append(new Date().getTime(), stats.cpu)
       memLine.append(new Date().getTime(), stats.mem)
       // console.log(JSON.parse(event.data))
     }
+
+    function resizeCanvas() {
+      var colWidth = $('.col-9.time-series').width()
+      $('canvas').attr('width', colWidth)
+      $('canvas').attr('height', colWidth * (3.0 / 8.0))
+    }
+
+    window.addEventListener('resize', resizeCanvas, false)
+
+    $('document').ready(function () {
+      resizeCanvas()
+      $.get('/system/api/v1/cpu', function (data) {
+        var cpuInfo = JSON.parse(data)
+        $('.cpu-model').text(cpuInfo && cpuInfo.model)
+        cpuInfo.cores.forEach(function (core, index) {
+          $('.cpu-freq').text((index + 1) + ': ' + core + ' MHz')
+        })
+        console.log(JSON.parse(data))
+      })
+    })
 
   </script>
 
