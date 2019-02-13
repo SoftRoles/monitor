@@ -19,32 +19,33 @@
 
   <div class='container-fluid'>
     <div class='row'>
-      <div class='col-6'>
+      <div class='col-6 host'>
         <form>
           <div class="form-group">
-            <label for="exampleFormControlInput1">Computer #1:</label>
-            <input class="form-control" id="exampleFormControlInput1" placeholder="http://127.0.0.1">
+            <h4>Computer #1:</h4>
+            <input class="form-control host-ip" value="http://127.0.0.1">
           </div>
         </form>
-        <div class='row'>
-          <div class='col-3'>
-            <h5>Memory:</h5>
-            <div></div>
-          </div>
-          <div class='col-9 time-series'>
-            <canvas id="mycanvasMem" height="150" width="400"></canvas>
-          </div>
-        </div>
         <div class='row'>
           <div class='col-3'>
             <h5>CPU:</h5>
             <div class='cpu-model'></div>
             <div class='cpu-freq'></div>
           </div>
-          <div class='col-9 time-series'>
-            <canvas id="mycanvasCpu" height="150" width="400"></canvas>
+          <div class='col-9 time-series-chart'>
+            <canvas class='cpu-chart' height="150" width="400"></canvas>
           </div>
         </div>
+        <div class='row'>
+          <div class='col-3'>
+            <h5>Memory:</h5>
+            <div></div>
+          </div>
+          <div class='col-9 time-series-chart'>
+            <canvas class='mem-chart' height="150" width="400"></canvas>
+          </div>
+        </div>
+
       </div>
       <div class='col-6'>Sunucu 2</div>
       <div class='col-6'>Sunucu 3</div>
@@ -53,49 +54,37 @@
 
   <script>
 
-
-    var smoothieCpu = new SmoothieChart({ millisPerPixel: 50, maxValue: 100, minValue: 0 });
-    smoothieCpu.streamTo(document.getElementById("mycanvasCpu"));
-    var smoothieMem = new SmoothieChart({ millisPerPixel: 50, maxValue: 100, minValue: 0 });
-    smoothieMem.streamTo(document.getElementById("mycanvasMem"));
-
-    var cpuLine = new TimeSeries();
-    var memLine = new TimeSeries();
-    smoothieCpu.addTimeSeries(cpuLine, { strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3 });
-    smoothieMem.addTimeSeries(memLine, { strokeStyle: 'rgb(0, 255, 0)', fillStyle: 'rgba(0, 255, 0, 0.4)', lineWidth: 3 });
-
-    var cpu = new WebSocket('ws://127.0.0.1/system/socket/v1')
-    cpu.onmessage = function (event) {
-      // console.log(JSON.parse(event.data))
-      var stats = JSON.parse(event.data)
-      cpuLine.append(new Date().getTime(), stats.cpu)
-      memLine.append(new Date().getTime(), stats.mem)
-      // console.log(JSON.parse(event.data))
-    }
-
     function resizeCanvas() {
-      var colWidth = $('.col-9.time-series').width()
-      $('canvas').attr('width', colWidth)
-      $('canvas').attr('height', colWidth * (3.0 / 8.0))
+      $('canvas').attr('width', $('.time-series-chart').width())
+      $('canvas').attr('height', $('.time-series-chart').width() * (3.0 / 8.0))
     }
 
     window.addEventListener('resize', resizeCanvas, false)
 
     $('document').ready(function () {
-      resizeCanvas()
-      var xhr = new XMLHttpRequest()
-      xhr.onreadystatechange = function () {
-        console.log(xhr.response)
-        if (xhr.readyState === 4) {
-          var cpuInfo = JSON.parse(xhr.response)
-          $('.cpu-model').text(cpuInfo && cpuInfo.model)
+      // initialiaze graphs
+      $('.host-ip').each(function (index, item) {
+        if (item.value) {
+          var cpuChart = new SmoothieChart({ millisPerPixel: 50, maxValue: 100, minValue: 0 });
+          var memChart = new SmoothieChart({ millisPerPixel: 50, maxValue: 100, minValue: 0 });
+          cpuChart.streamTo(document.querySelectorAll('.cpu-chart')[index]);
+          memChart.streamTo(document.querySelectorAll('.mem-chart')[index]);
+          resizeCanvas()
+          $.get(item.value + '/system/api/v1/cpu', function (d, t, x) {
+            $('.cpu-model').eq(index).text(d.model)
+            $('.cpu-freq').eq(index).text(d.count + ' x ' + d.speed)
+          })
+          var socket = new WebSocket('ws://127.0.0.1/stats')
+          socket.onmessage = function (event) {
+            // console.log(JSON.parse(event.data))
+            var stats = JSON.parse(event.data)
+            cpuLine.append(new Date().getTime(), stats.cpu)
+            memLine.append(new Date().getTime(), stats.mem)
+            // console.log(JSON.parse(event.data))
+          }
         }
-      }
-      xhr.open('GET', '/system/api/v1/cpu', true)
-      xhr.send()
-          
+      })
     })
-
   </script>
 
 </body>
